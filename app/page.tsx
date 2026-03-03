@@ -8,6 +8,12 @@ export default function Home() {
       description: "Interactive particle simulation with tunable physics parameters.",
       href: "/labs/hypervortex",
     },
+    {
+      id: "double-pendulum",
+      name: "Double Pendulum",
+      description: "Demonstration of pure Chaos Theory using Lagrangian Mechanics.",
+      href: "/labs/double-pendulum",
+    },
   ];
 
   return (
