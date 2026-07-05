@@ -15,6 +15,7 @@ export default function PhysicsSimulatorPage() {
     });
 
     const [isPlaying, setIsPlaying] = useState(true);
+    const [isAudioEnabled, setIsAudioEnabled] = useState(false);
 
     // Track selected preset
     const [selectedConfigId, setSelectedConfigId] = useState<number>(physicsPresets[0].id);
@@ -38,6 +39,7 @@ export default function PhysicsSimulatorPage() {
             bouncinessMultiplier: 1.0,
         });
         setIsPlaying(true);
+        setIsAudioEnabled(false);
     };
 
     return (
@@ -65,6 +67,8 @@ export default function PhysicsSimulatorPage() {
                         togglePlay={handleTogglePlay}
                         selectedConfigId={selectedConfigId}
                         setSelectedConfigId={setSelectedConfigId}
+                        isAudioEnabled={isAudioEnabled}
+                        setIsAudioEnabled={setIsAudioEnabled}
                         onReset={handleResetFilters}
                     />
                 </div>
@@ -73,6 +77,7 @@ export default function PhysicsSimulatorPage() {
                     <PhysicsCanvas
                         config={selectedConfig}
                         globalSettings={globalSettings}
+                        isAudioEnabled={isAudioEnabled}
                     />
                 </div>
             </div>

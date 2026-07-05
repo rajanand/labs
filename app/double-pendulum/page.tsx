@@ -13,6 +13,7 @@ export default function DoublePendulumPage() {
     const [gravity, setGravity] = useState(1);
     const [trailLength, setTrailLength] = useState(200);
     const [showMultiple, setShowMultiple] = useState(false);
+    const [isAudioEnabled, setIsAudioEnabled] = useState(false);
 
     // Trigger physics resets
     const [resetKey, setResetKey] = useState(0);
@@ -49,6 +50,7 @@ export default function DoublePendulumPage() {
                         gravity={gravity} setGravity={setGravity}
                         trailLength={trailLength} setTrailLength={setTrailLength}
                         showMultiple={showMultiple} setShowMultiple={setShowMultiple}
+                        isAudioEnabled={isAudioEnabled} setIsAudioEnabled={setIsAudioEnabled}
                         onReset={handleReset}
                     />
                 </div>
@@ -64,6 +66,7 @@ export default function DoublePendulumPage() {
                         showMultiple={showMultiple}
                         resetKey={resetKey}
                         resetVariant={resetVariant}
+                        isAudioEnabled={isAudioEnabled}
                     />
                 </div>
             </div>

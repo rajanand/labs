@@ -7,6 +7,9 @@ export interface GridNode {
     vy: number;
     col: number; // Grid X index
     row: number; // Grid Y index
+    rightConnected?: boolean;
+    bottomConnected?: boolean;
+    disturbance?: number; // 0 to 1, propagates as a color ripple wave
 }
 
 // Generates a 2D map of nodes centered in the canvas
@@ -21,7 +24,6 @@ export function createGridMesh(cols: number, rows: number, padding: number, widt
     const spacingX = cols > 1 ? usableWidth / (cols - 1) : 0;
     const spacingY = rows > 1 ? usableHeight / (rows - 1) : 0;
 
-    // Center offset if grid is smaller than canvas
     const startX = padding;
     const startY = padding;
 
@@ -38,7 +40,10 @@ export function createGridMesh(cols: number, rows: number, padding: number, widt
                 vx: 0,
                 vy: 0,
                 col: c,
-                row: r
+                row: r,
+                rightConnected: true,
+                bottomConnected: true,
+                disturbance: 0
             });
         }
         mesh.push(rowArr);
@@ -63,14 +68,52 @@ export function updateGridMesh(mesh: GridNode[][], params: PhysicsParams) {
     const rows = mesh.length;
     const cols = mesh[0].length;
 
-    // We process the mesh in two passes: calculate forces, then apply velocities.
-    // This ensures order of iteration doesn't bias the springs (similar to cloth physics).
+    // 1. Accumulate Mouse Disturbance
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const node = mesh[r][c];
+            if (node.disturbance === undefined) node.disturbance = 0;
+            if (node.rightConnected === undefined) node.rightConnected = true;
+            if (node.bottomConnected === undefined) node.bottomConnected = true;
+
+            if (mx > -999 && my > -999) {
+                const dxMouse = node.x - mx;
+                const dyMouse = node.y - my;
+                const distMouseSq = dxMouse * dxMouse + dyMouse * dyMouse;
+                if (distMouseSq < repulsionRadius * repulsionRadius) {
+                    const dist = Math.sqrt(distMouseSq);
+                    const factor = (repulsionRadius - dist) / repulsionRadius;
+                    node.disturbance = Math.max(node.disturbance, factor);
+                }
+            }
+        }
+    }
+
+    // 2. Propagate / Diffuse Disturbance to Neighbors (Ripple propagation wave)
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const node = mesh[r][c];
+            let neighborSum = 0;
+            let count = 0;
+
+            if (c > 0 && mesh[r][c - 1].rightConnected) { neighborSum += mesh[r][c - 1].disturbance || 0; count++; }
+            if (c < cols - 1 && node.rightConnected) { neighborSum += mesh[r][c + 1].disturbance || 0; count++; }
+            if (r > 0 && mesh[r - 1][c].bottomConnected) { neighborSum += mesh[r - 1][c].disturbance || 0; count++; }
+            if (r < rows - 1 && node.bottomConnected) { neighborSum += mesh[r + 1][c].disturbance || 0; count++; }
+
+            if (count > 0) {
+                const avg = neighborSum / count;
+                node.disturbance = (node.disturbance || 0) * 0.88 + avg * 0.1;
+            }
+            node.disturbance = Math.max(0, (node.disturbance || 0) * 0.94); // decay
+        }
+    }
 
     // Force accumulators
     const forceX: number[][] = Array(rows).fill(0).map(() => Array(cols).fill(0));
     const forceY: number[][] = Array(rows).fill(0).map(() => Array(cols).fill(0));
 
-    // 1. Calculate Forces
+    // 3. Calculate Physics Forces
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             const node = mesh[r][c];
@@ -78,7 +121,6 @@ export function updateGridMesh(mesh: GridNode[][], params: PhysicsParams) {
             // A. Anchor Spring Force (Pulling node back to its original rest position)
             const dxAnchor = node.rx - node.x;
             const dyAnchor = node.ry - node.y;
-            // The anchor spring is slightly softer than neighbor springs
             forceX[r][c] += dxAnchor * (stiffness * 0.5);
             forceY[r][c] += dyAnchor * (stiffness * 0.5);
 
@@ -97,54 +139,57 @@ export function updateGridMesh(mesh: GridNode[][], params: PhysicsParams) {
             }
 
             // C. Neighbor Spring Forces
-            // To prevent calculating each spring twice, a node only pulls towards its Right and Bottom neighbors.
-            // When it does, it applies equal and opposite force to the neighbor immediately.
-
-            // Right Neighbor
-            if (c < cols - 1) {
+            // Right Neighbor (Tearable connection)
+            if (c < cols - 1 && node.rightConnected) {
                 const right = mesh[r][c + 1];
-                const expectedDistX = right.rx - node.rx; // Horizontal grid spacing
+                const expectedDistX = right.rx - node.rx;
 
                 const dxNeighbor = right.x - node.x;
                 const dyNeighbor = right.y - node.y;
                 const currentDist = Math.sqrt(dxNeighbor * dxNeighbor + dyNeighbor * dyNeighbor) || 1;
 
-                const stretch = currentDist - expectedDistX;
+                // Snap/Tear connection if stretched beyond 2.3x the rest distance
+                if (currentDist > expectedDistX * 2.3) {
+                    node.rightConnected = false;
+                } else {
+                    const stretch = currentDist - expectedDistX;
+                    const fx = (dxNeighbor / currentDist) * stretch * stiffness;
+                    const fy = (dyNeighbor / currentDist) * stretch * stiffness;
 
-                const fx = (dxNeighbor / currentDist) * stretch * stiffness;
-                const fy = (dyNeighbor / currentDist) * stretch * stiffness;
-
-                // Pull node towards right, pull right towards node
-                forceX[r][c] += fx;
-                forceY[r][c] += fy;
-                forceX[r][c + 1] -= fx;
-                forceY[r][c + 1] -= fy;
+                    forceX[r][c] += fx;
+                    forceY[r][c] += fy;
+                    forceX[r][c + 1] -= fx;
+                    forceY[r][c + 1] -= fy;
+                }
             }
 
-            // Bottom Neighbor
-            if (r < rows - 1) {
+            // Bottom Neighbor (Tearable connection)
+            if (r < rows - 1 && node.bottomConnected) {
                 const bottom = mesh[r + 1][c];
-                const expectedDistY = bottom.ry - node.ry; // Vertical grid spacing
+                const expectedDistY = bottom.ry - node.ry;
 
                 const dxNeighbor = bottom.x - node.x;
                 const dyNeighbor = bottom.y - node.y;
                 const currentDist = Math.sqrt(dxNeighbor * dxNeighbor + dyNeighbor * dyNeighbor) || 1;
 
-                const stretch = currentDist - expectedDistY;
+                // Snap/Tear connection if stretched beyond 2.3x the rest distance
+                if (currentDist > expectedDistY * 2.3) {
+                    node.bottomConnected = false;
+                } else {
+                    const stretch = currentDist - expectedDistY;
+                    const fx = (dxNeighbor / currentDist) * stretch * stiffness;
+                    const fy = (dyNeighbor / currentDist) * stretch * stiffness;
 
-                const fx = (dxNeighbor / currentDist) * stretch * stiffness;
-                const fy = (dyNeighbor / currentDist) * stretch * stiffness;
-
-                // Pull node towards bottom, pull bottom towards node
-                forceX[r][c] += fx;
-                forceY[r][c] += fy;
-                forceX[r + 1][c] -= fx;
-                forceY[r + 1][c] -= fy;
+                    forceX[r][c] += fx;
+                    forceY[r][c] += fy;
+                    forceX[r + 1][c] -= fx;
+                    forceY[r + 1][c] -= fy;
+                }
             }
         }
     }
 
-    // 2. Apply Acceleration & Velocity
+    // 4. Apply Acceleration & Velocity
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             const node = mesh[r][c];

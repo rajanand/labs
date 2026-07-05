@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useCallback } from "react";
-import { createKineticParticles, updateKineticParticles, extractTextTargets, KineticParticle } from "@/lib/physics/kinetic-shapes";
+import { createKineticParticles, updateKineticParticles, extractTextTargets, extractShapeTargets, KineticParticle } from "@/lib/physics/kinetic-shapes";
 
 interface KineticCanvasProps {
     inputText: string;
@@ -12,6 +12,7 @@ interface KineticCanvasProps {
     repulsionStrength: number;
     fontSize: number;
     resetKey: number;
+    shapeMode: "text" | "circle" | "spiral" | "heart" | "star";
 }
 
 export function KineticCanvas(props: KineticCanvasProps) {
@@ -33,13 +34,19 @@ export function KineticCanvas(props: KineticCanvasProps) {
         simulationRef.current.particles = createKineticParticles(props.particleCount, simulationRef.current.width || 800, simulationRef.current.height || 600);
     }, [props.particleCount, props.resetKey]);
 
-    // When Text changes, re-calculate targets and assign them to existing particles smoothly
+    // When Text/Shape changes, re-calculate targets and assign them to existing particles smoothly
     useEffect(() => {
         const sim = simulationRef.current;
         if (sim.width === 0 || sim.height === 0 || sim.particles.length === 0) return;
 
-        const targets = extractTextTargets(props.inputText, sim.width, sim.height, props.fontSize);
-        if (targets.length === 0) return; // If text is empty, they just stay where they are
+        let targets: { x: number, y: number }[] = [];
+        if (props.shapeMode === "text") {
+            targets = extractTextTargets(props.inputText, sim.width, sim.height, props.fontSize);
+        } else {
+            targets = extractShapeTargets(props.shapeMode, sim.width, sim.height, props.particleCount);
+        }
+
+        if (targets.length === 0) return; // If text/shape is empty, they just stay where they are
 
         // Randomly shuffle targets so assignments look more organic
         const shuffledTargets = [...targets].sort(() => Math.random() - 0.5);
@@ -50,12 +57,12 @@ export function KineticCanvas(props: KineticCanvasProps) {
             sim.particles[i].tx = t.x;
             sim.particles[i].ty = t.y;
         }
-    }, [props.inputText, props.fontSize, props.particleCount]); // Dependency on count to re-assign if quantity changes
+    }, [props.inputText, props.fontSize, props.particleCount, props.shapeMode]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        const ctx = canvas.getContext("2d", { alpha: false }); // Opt out of alpha blending with background for slight perf boost
+        const ctx = canvas.getContext("2d", { alpha: false }); // Opt out of alpha blending for slight perf boost
         if (!ctx) return;
 
         let animationFrameId: number;
@@ -77,8 +84,14 @@ export function KineticCanvas(props: KineticCanvasProps) {
             simulationRef.current.height = height;
             simulationRef.current.dpr = dpr;
 
-            // Force target recalculation on resize so text stays centered
-            const targets = extractTextTargets(props.inputText, width, height, props.fontSize);
+            // Force target recalculation on resize so coordinates adapt to screen size
+            let targets: { x: number, y: number }[] = [];
+            if (props.shapeMode === "text") {
+                targets = extractTextTargets(props.inputText, width, height, props.fontSize);
+            } else {
+                targets = extractShapeTargets(props.shapeMode, width, height, props.particleCount);
+            }
+
             if (targets.length > 0) {
                 const shuffledTargets = [...targets].sort(() => Math.random() - 0.5);
                 for (let i = 0; i < simulationRef.current.particles.length; i++) {
@@ -113,7 +126,6 @@ export function KineticCanvas(props: KineticCanvasProps) {
             ctx.fillRect(0, 0, sim.width, sim.height);
 
             // Draw Particles
-            // We group by character so we don't have to change fonts/colors as frequently
             ctx.textBaseline = "middle";
             ctx.textAlign = "center";
 
@@ -135,7 +147,6 @@ export function KineticCanvas(props: KineticCanvasProps) {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.springStiffness, props.damping, props.repulsionRadius, props.repulsionStrength]);
-    // Omit heavy props (text/count) from loop dependency since they use Refs
 
     const handlePointerMove = useCallback((e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent) => {
         const canvas = canvasRef.current;

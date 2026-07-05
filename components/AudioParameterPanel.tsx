@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 
 interface AudioParameterPanelProps {
     isListening: boolean;
@@ -10,6 +10,10 @@ interface AudioParameterPanelProps {
     setSensitivity: (value: number) => void;
     visualStyle: "bars" | "rings" | "particles";
     setVisualStyle: (value: "bars" | "rings" | "particles") => void;
+    audioFile: File | null;
+    onFileChange: (file: File | null) => void;
+    isFilePlaying: boolean;
+    toggleFilePlay: () => void;
 }
 
 export function AudioParameterPanel(props: AudioParameterPanelProps) {
@@ -18,7 +22,17 @@ export function AudioParameterPanel(props: AudioParameterPanelProps) {
         smoothing, setSmoothing,
         sensitivity, setSensitivity,
         visualStyle, setVisualStyle,
+        audioFile, onFileChange,
+        isFilePlaying, toggleFilePlay
     } = props;
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            onFileChange(e.target.files[0]);
+        }
+    };
 
     return (
         <div className="flex flex-col gap-6 p-6 bg-zinc-900 border border-zinc-800 rounded-2xl h-full shadow-lg overflow-y-auto custom-scrollbar">
@@ -29,33 +43,104 @@ export function AudioParameterPanel(props: AudioParameterPanelProps) {
                 </div>
             </div>
 
-            {/* Primary Actions */}
-            <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-zinc-300">Input Source</label>
+            {/* Input Sources */}
+            <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-zinc-300">Input Source</label>
 
-                <button
-                    onClick={toggleMicrophone}
-                    className={`w-full px-4 py-4 text-sm font-bold border rounded-xl transition-all flex items-center justify-center gap-3
+                    {/* Microphone Button */}
+                    <button
+                        onClick={toggleMicrophone}
+                        className={`w-full px-4 py-3 text-sm font-bold border rounded-xl transition-all flex items-center justify-center gap-3
                ${isListening
-                            ? 'bg-red-500/10 border-red-500/50 hover:bg-red-500/20 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)]'
-                            : 'bg-blue-500/20 text-blue-400 border-blue-500/50 hover:bg-blue-500/30'}`}
-                >
-                    {isListening ? (
-                        <>
-                            <span className="relative flex h-3 w-3">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                            </span>
-                            Stop Microphone
-                        </>
-                    ) : (
-                        "Start Microphone"
-                    )}
-                </button>
+                                ? 'bg-red-500/10 border-red-500/50 hover:bg-red-500/20 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                                : 'bg-blue-500/20 text-blue-400 border-blue-500/50 hover:bg-blue-500/30'}`}
+                    >
+                        {isListening ? (
+                            <>
+                                <span className="relative flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                </span>
+                                Stop Microphone
+                            </>
+                        ) : (
+                            "Start Microphone"
+                        )}
+                    </button>
 
-                {hasPermission === false && (
-                    <p className="text-xs text-red-400 mt-1">Permission denied. Please allow microphone access in your browser.</p>
-                )}
+                    {hasPermission === false && (
+                        <p className="text-xs text-red-400 mt-1">Permission denied. Please allow microphone access in your browser.</p>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-2 my-1">
+                    <div className="h-px flex-grow bg-zinc-800"></div>
+                    <span className="text-xs text-zinc-500 font-medium">OR</span>
+                    <div className="h-px flex-grow bg-zinc-800"></div>
+                </div>
+
+                {/* File Upload Section */}
+                <div className="flex flex-col gap-2">
+                    <input
+                        type="file"
+                        accept="audio/*"
+                        ref={fileInputRef}
+                        onChange={handleFileSelect}
+                        className="hidden"
+                    />
+
+                    {audioFile ? (
+                        <div className="flex flex-col gap-2 p-3 bg-zinc-950 border border-zinc-800 rounded-xl">
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-zinc-300 truncate font-medium flex-grow" title={audioFile.name}>
+                                    🎵 {audioFile.name}
+                                </span>
+                                <button
+                                    onClick={() => onFileChange(null)}
+                                    className="text-zinc-500 hover:text-zinc-300 text-xs font-bold px-1"
+                                    title="Remove file"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <button
+                                onClick={toggleFilePlay}
+                                className={`w-full px-3 py-2 text-xs font-bold border rounded-lg transition-colors flex items-center justify-center gap-2
+                    ${isFilePlaying
+                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                                        : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-zinc-700'}`}
+                            >
+                                {isFilePlaying ? (
+                                    <>
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Pause File
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                        </svg>
+                                        Play File
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full px-4 py-3 text-sm font-semibold bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 rounded-xl transition-all flex items-center justify-center gap-2"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            Upload Audio File
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="h-px w-full bg-zinc-800 my-2"></div>

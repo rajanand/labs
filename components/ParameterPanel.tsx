@@ -21,6 +21,8 @@ interface ParameterPanelProps {
     // Interaction State
     interactionMode: InteractionMode;
     setInteractionMode: (value: InteractionMode) => void;
+    showVectorField: boolean;
+    setShowVectorField: (value: boolean) => void;
 
     onResetCamera: () => void;
 }
@@ -34,6 +36,7 @@ export function ParameterPanel(props: ParameterPanelProps) {
         trailLength, setTrailLength,
         glowIntensity, setGlowIntensity,
         interactionMode, setInteractionMode,
+        showVectorField, setShowVectorField,
         onResetCamera,
     } = props;
 
@@ -45,16 +48,21 @@ export function ParameterPanel(props: ParameterPanelProps) {
         setTrailLength(0.2);
         setGlowIntensity(5);
         setInteractionMode("attract");
+        setShowVectorField(false);
         onResetCamera();
     };
 
-    const setPreset = (preset: "calm" | "storm" | "blackhole") => {
+    const setPreset = (preset: "calm" | "storm" | "blackhole" | "nebula" | "supernova") => {
         if (preset === "calm") {
             setRotationSpeed(0.2); setParticleCount(1000); setTurbulenceFactor(0.2); setGravityConstant(2); setTrailLength(0.05); setGlowIntensity(2);
         } else if (preset === "storm") {
             setRotationSpeed(8); setParticleCount(3000); setTurbulenceFactor(4); setGravityConstant(8); setTrailLength(0.5); setGlowIntensity(10);
         } else if (preset === "blackhole") {
             setRotationSpeed(6); setParticleCount(5000); setTurbulenceFactor(0); setGravityConstant(20); setTrailLength(0.1); setGlowIntensity(8);
+        } else if (preset === "nebula") {
+            setRotationSpeed(0.5); setParticleCount(4000); setTurbulenceFactor(2.5); setGravityConstant(1.0); setTrailLength(0.08); setGlowIntensity(12);
+        } else if (preset === "supernova") {
+            setRotationSpeed(3.0); setParticleCount(6000); setTurbulenceFactor(4.8); setGravityConstant(0.2); setTrailLength(0.65); setGlowIntensity(15);
         }
         onResetCamera();
     };
@@ -75,6 +83,8 @@ export function ParameterPanel(props: ParameterPanelProps) {
                     <button onClick={() => setPreset("calm")} className="px-2 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-md transition-colors">Calm</button>
                     <button onClick={() => setPreset("storm")} className="px-2 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-md transition-colors">Storm</button>
                     <button onClick={() => setPreset("blackhole")} className="px-2 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-md transition-colors">Black Hole</button>
+                    <button onClick={() => setPreset("nebula")} className="px-2 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-md transition-colors">Nebula</button>
+                    <button onClick={() => setPreset("supernova")} className="px-2 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-md transition-colors">Supernova</button>
                 </div>
                 <button onClick={handleReset} className="mt-2 w-full px-4 py-2 text-sm font-medium bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-lg transition-colors border border-red-900/50">
                     Reset to Defaults / Center Camera
@@ -98,6 +108,18 @@ export function ParameterPanel(props: ParameterPanelProps) {
                         className={`px-2 py-1.5 text-xs font-medium rounded-md transition-colors border ${interactionMode === 'pan' ? 'bg-green-500/20 text-green-400 border-green-500/50' : 'bg-transparent text-zinc-400 border-zinc-700 hover:bg-zinc-800'}`}
                     >Pan Canvas</button>
                 </div>
+            </div>
+
+            {/* Vector Field overlay */}
+            <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-zinc-300">Vector Field Overlay</label>
+                <button
+                    onClick={() => setShowVectorField(!showVectorField)}
+                    className={`w-full px-4 py-2.5 text-sm font-semibold border rounded-lg transition-colors flex items-center justify-center gap-2
+            ${showVectorField ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' : 'bg-transparent text-zinc-400 border-zinc-700 hover:bg-zinc-800'}`}
+                >
+                    {showVectorField ? "Hide Vector Field Grid" : "Show Vector Field Grid"}
+                </button>
             </div>
 
             <div className="h-px w-full bg-zinc-800 my-2"></div>

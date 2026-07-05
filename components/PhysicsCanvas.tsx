@@ -7,9 +7,10 @@ import { generatePolygon, generateStar, add, mult, dot, sub, normalize, mag } fr
 interface PhysicsCanvasProps {
     config: SimulationConfig;
     globalSettings: GlobalSettings;
+    isAudioEnabled: boolean;
 }
 
-export function PhysicsCanvas({ config, globalSettings }: PhysicsCanvasProps) {
+export function PhysicsCanvas({ config, globalSettings, isAudioEnabled }: PhysicsCanvasProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -27,6 +28,54 @@ export function PhysicsCanvas({ config, globalSettings }: PhysicsCanvasProps) {
         height: 0,
         dpr: 1
     });
+
+    // Keep track of audio settings in a ref to avoid resetting the simulation on toggle
+    const isAudioEnabledRef = useRef(isAudioEnabled);
+    useEffect(() => {
+        isAudioEnabledRef.current = isAudioEnabled;
+    }, [isAudioEnabled]);
+
+    const audioCtxRef = useRef<AudioContext | null>(null);
+    const lastPlayedRef = useRef<number>(0);
+
+    const playCollisionSound = (edgeIndex: number, speed: number) => {
+        try {
+            if (!audioCtxRef.current) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+                audioCtxRef.current = new AudioContextClass();
+            }
+            const ctx = audioCtxRef.current;
+            if (ctx.state === "suspended") {
+                ctx.resume();
+            }
+
+            const osc = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            // Clean pentatonic scale notes: E4, G4, A4, C5, D5, E5, G5, A5
+            const pentatonic = [329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00];
+            const baseFreq = pentatonic[edgeIndex % pentatonic.length];
+
+            // Speed modulates pitch
+            const freq = baseFreq + Math.min(80, speed * 2.5);
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            osc.type = "sine";
+
+            // Volume based on impact speed
+            gainNode.gain.setValueAtTime(0, ctx.currentTime);
+            const volume = Math.min(0.08, (speed / 15) * 0.05 + 0.01);
+            gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.004);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+
+            osc.start();
+            osc.stop(ctx.currentTime + 0.22);
+        } catch (e) {
+            console.error("Collision audio synthesis failed:", e);
+        }
+    };
 
     // Re-Initialize Simulation when config or ball properties change
     useEffect(() => {
@@ -54,6 +103,15 @@ export function PhysicsCanvas({ config, globalSettings }: PhysicsCanvasProps) {
         stateRef.current.balls = balls;
         stateRef.current.rotation = 0;
     }, [config.id, config.ballCount, config.initialSpeed, config.ballSize]);
+
+    // Cleanup audio context on unmount
+    useEffect(() => {
+        return () => {
+            if (audioCtxRef.current) {
+                audioCtxRef.current.close().catch(console.error);
+            }
+        };
+    }, []);
 
     // Main tick loop
     useEffect(() => {
@@ -140,6 +198,15 @@ export function PhysicsCanvas({ config, globalSettings }: PhysicsCanvasProps) {
                             ball.vel = mult(ball.vel, restitution);
                             // Tiny push to prevent sticking to the line perfectly
                             ball.vel = add(ball.vel, mult(edgeNormal, 0.1));
+
+                            // Collision Chime Sound
+                            if (isAudioEnabledRef.current) {
+                                const now = performance.now();
+                                if (now - lastPlayedRef.current > 70) { // 70ms rate limit
+                                    lastPlayedRef.current = now;
+                                    playCollisionSound(i, Math.abs(velDotNormal));
+                                }
+                            }
                         }
                     }
                 }

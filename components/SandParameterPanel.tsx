@@ -1,5 +1,14 @@
 import React from "react";
-import { MAT_EMPTY, MAT_SAND, MAT_WATER, MAT_WALL } from "@/lib/physics/falling-sand";
+import {
+    MAT_EMPTY,
+    MAT_SAND,
+    MAT_WATER,
+    MAT_WALL,
+    MAT_WOOD,
+    MAT_ACID,
+    MAT_FIRE,
+    MAT_LAVA
+} from "@/lib/physics/falling-sand";
 
 interface SandParameterPanelProps {
     brushSize: number;
@@ -55,37 +64,71 @@ export function SandParameterPanel(props: SandParameterPanelProps) {
             <div className="flex flex-col gap-3">
                 <label className="text-sm font-medium text-zinc-300">Material</label>
 
-                <MaterialButton
-                    active={material === MAT_SAND}
-                    onClick={() => setMaterial(MAT_SAND)}
-                    label="Sand"
-                    desc="Falls down and stacks."
-                    colorClass="bg-yellow-300"
-                />
+                <div className="grid grid-cols-1 gap-2">
+                    <MaterialButton
+                        active={material === MAT_SAND}
+                        onClick={() => setMaterial(MAT_SAND)}
+                        label="Sand"
+                        desc="Falls down and stacks."
+                        colorClass="bg-yellow-300"
+                    />
 
-                <MaterialButton
-                    active={material === MAT_WATER}
-                    onClick={() => setMaterial(MAT_WATER)}
-                    label="Water"
-                    desc="Falls and flows horizontally."
-                    colorClass="bg-blue-400"
-                />
+                    <MaterialButton
+                        active={material === MAT_WATER}
+                        onClick={() => setMaterial(MAT_WATER)}
+                        label="Water"
+                        desc="Falls and flows horizontally."
+                        colorClass="bg-blue-400"
+                    />
 
-                <MaterialButton
-                    active={material === MAT_WALL}
-                    onClick={() => setMaterial(MAT_WALL)}
-                    label="Wall / Stone"
-                    desc="Indestructible and immobile."
-                    colorClass="bg-zinc-500"
-                />
+                    <MaterialButton
+                        active={material === MAT_WOOD}
+                        onClick={() => setMaterial(MAT_WOOD)}
+                        label="Wood"
+                        desc="Flammable static barrier."
+                        colorClass="bg-amber-900"
+                    />
 
-                <MaterialButton
-                    active={material === MAT_EMPTY}
-                    onClick={() => setMaterial(MAT_EMPTY)}
-                    label="Eraser"
-                    desc="Deletes any material."
-                    colorClass="bg-zinc-950 border border-zinc-700"
-                />
+                    <MaterialButton
+                        active={material === MAT_ACID}
+                        onClick={() => setMaterial(MAT_ACID)}
+                        label="Acid"
+                        desc="Corrodes wood, sand, and stone."
+                        colorClass="bg-green-500"
+                    />
+
+                    <MaterialButton
+                        active={material === MAT_FIRE}
+                        onClick={() => setMaterial(MAT_FIRE)}
+                        label="Fire"
+                        desc="Burns wood, floats up, dies."
+                        colorClass="bg-red-500"
+                    />
+
+                    <MaterialButton
+                        active={material === MAT_LAVA}
+                        onClick={() => setMaterial(MAT_LAVA)}
+                        label="Lava"
+                        desc="Slow liquid. Ignites wood, cools in water."
+                        colorClass="bg-orange-500"
+                    />
+
+                    <MaterialButton
+                        active={material === MAT_WALL}
+                        onClick={() => setMaterial(MAT_WALL)}
+                        label="Wall / Stone"
+                        desc="Indestructible and immobile."
+                        colorClass="bg-zinc-500"
+                    />
+
+                    <MaterialButton
+                        active={material === MAT_EMPTY}
+                        onClick={() => setMaterial(MAT_EMPTY)}
+                        label="Eraser"
+                        desc="Deletes any material."
+                        colorClass="bg-zinc-950 border border-zinc-700"
+                    />
+                </div>
             </div>
 
             <div className="h-px w-full bg-zinc-800 my-2"></div>
@@ -113,7 +156,7 @@ function MaterialButton({ active, onClick, label, desc, colorClass }: { active: 
                 <div className="text-xs text-zinc-500 mt-0.5">{desc}</div>
             </div>
         </button>
-    )
+    );
 }
 
 interface SliderControlProps {

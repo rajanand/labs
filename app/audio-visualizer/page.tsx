@@ -13,22 +13,42 @@ export default function AudioVisualizerPage() {
 
     const [hasMicrophonePermission, setHasMicrophonePermission] = useState<boolean | null>(null);
 
-    // We lift the microphone start/stop logic up here so the panel can trigger it, 
-    // and pass the active/inactive state down to the canvas
+    // Audio file states
+    const [audioFile, setAudioFile] = useState<File | null>(null);
+    const [isFilePlaying, setIsFilePlaying] = useState(false);
+
+    // Microphone toggle (pauses file playback)
     const toggleMicrophone = async () => {
         if (isListening) {
             setIsListening(false);
             return;
         }
 
+        // Pause file playback first
+        setIsFilePlaying(false);
+
         try {
-            // Just test if we can get it, the hook inside AudioCanvas will grab the actual stream
             await navigator.mediaDevices.getUserMedia({ audio: true });
             setHasMicrophonePermission(true);
             setIsListening(true);
         } catch (err) {
             console.error("Microphone access denied:", err);
             setHasMicrophonePermission(false);
+        }
+    };
+
+    const handleFileChange = (file: File | null) => {
+        setAudioFile(file);
+        setIsFilePlaying(!!file); // Auto-play if a file is loaded
+        if (file) {
+            setIsListening(false); // Stop microphone
+        }
+    };
+
+    const handleToggleFilePlay = () => {
+        if (audioFile) {
+            setIsFilePlaying(prev => !prev);
+            setIsListening(false); // Stop microphone
         }
     };
 
@@ -45,7 +65,7 @@ export default function AudioVisualizerPage() {
                     Back to Labs
                 </Link>
                 <h1 className="text-3xl font-bold tracking-tight text-white mt-4 ml-2">Audio Visualizer</h1>
-                <p className="text-zinc-400 mt-1 ml-2 text-sm">Real-time Microphone FFT Analysis</p>
+                <p className="text-zinc-400 mt-1 ml-2 text-sm">Real-time Audio FFT Analysis</p>
             </header>
 
             <div className="flex-grow grid grid-cols-1 lg:grid-cols-4 gap-6 mt-20 md:mt-16 h-full max-h-[calc(100vh-8rem)] z-10">
@@ -57,6 +77,10 @@ export default function AudioVisualizerPage() {
                         smoothing={smoothing} setSmoothing={setSmoothing}
                         sensitivity={sensitivity} setSensitivity={setSensitivity}
                         visualStyle={visualStyle} setVisualStyle={setVisualStyle}
+                        audioFile={audioFile}
+                        onFileChange={handleFileChange}
+                        isFilePlaying={isFilePlaying}
+                        toggleFilePlay={handleToggleFilePlay}
                     />
                 </div>
 
@@ -66,6 +90,8 @@ export default function AudioVisualizerPage() {
                         smoothing={smoothing}
                         sensitivity={sensitivity}
                         visualStyle={visualStyle}
+                        audioFile={audioFile}
+                        isFilePlaying={isFilePlaying}
                     />
                 </div>
             </div>

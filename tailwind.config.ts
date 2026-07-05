@@ -19,6 +19,10 @@ const config: Config = {
     'bg-blue-400',
     'bg-zinc-500',
     'bg-zinc-950',
+    'bg-amber-900',
+    'bg-green-500',
+    'bg-red-500',
+    'bg-orange-500',
   ],
   plugins: [],
 };

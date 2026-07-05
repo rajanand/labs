@@ -15,6 +15,8 @@ interface KineticParameterPanelProps {
     setRepulsionStrength: (value: number) => void;
     fontSize: number;
     setFontSize: (value: number) => void;
+    shapeMode: "text" | "circle" | "spiral" | "heart" | "star";
+    setShapeMode: (value: "text" | "circle" | "spiral" | "heart" | "star") => void;
     onReset: () => void;
 }
 
@@ -27,6 +29,7 @@ export function KineticParameterPanel(props: KineticParameterPanelProps) {
         repulsionRadius, setRepulsionRadius,
         repulsionStrength, setRepulsionStrength,
         fontSize, setFontSize,
+        shapeMode, setShapeMode,
         onReset,
     } = props;
 
@@ -39,24 +42,51 @@ export function KineticParameterPanel(props: KineticParameterPanelProps) {
                 </div>
             </div>
 
-            {/* Primary Actions */}
+            {/* Target Mode Selectors */}
             <div className="flex flex-col gap-3 p-4 bg-zinc-950/50 rounded-xl border border-zinc-800/50">
-                <label className="text-sm font-medium text-zinc-300">Target Shape / Text</label>
-                <textarea
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-y min-h-[80px]"
-                    placeholder="Type anything..."
-                />
-
-                <div className="grid grid-cols-3 gap-2 mt-1">
-                    <PresetButton label="HELLO" onClick={() => setInputText("HELLO")} />
-                    <PresetButton label="TECH" onClick={() => setInputText("X Y Z\n1 2 3")} />
-                    <PresetButton label="MATH" onClick={() => setInputText("∑ ∫ µ\nΩ ∆ π")} />
-                    <PresetButton label="ART" onClick={() => setInputText("✦ ✧\n★ ☆")} />
-                    <PresetButton label="CODE" onClick={() => setInputText("{ [ ( )\n< > ] }")} />
-                    <PresetButton label="RESET" onClick={() => onReset()} className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/30" />
+                <label className="text-sm font-medium text-zinc-300">Target Mode</label>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                    <button
+                        onClick={() => setShapeMode("text")}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded transition-colors border
+                ${shapeMode === "text" ? "bg-blue-500/20 text-blue-400 border-blue-500/50" : "bg-transparent text-zinc-400 border-zinc-800 hover:bg-zinc-800"}`}
+                    >
+                        Text Input
+                    </button>
+                    <button
+                        onClick={() => setShapeMode("circle")}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded transition-colors border
+                ${shapeMode !== "text" ? "bg-blue-500/20 text-blue-400 border-blue-500/50" : "bg-transparent text-zinc-400 border-zinc-800 hover:bg-zinc-800"}`}
+                    >
+                        Math Presets
+                    </button>
                 </div>
+
+                {shapeMode === "text" ? (
+                    <>
+                        <textarea
+                            value={inputText}
+                            onChange={(e) => setInputText(e.target.value)}
+                            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-y min-h-[80px] text-sm"
+                            placeholder="Type anything..."
+                        />
+                        <div className="grid grid-cols-3 gap-2 mt-1">
+                            <PresetButton label="HELLO" onClick={() => setInputText("HELLO")} />
+                            <PresetButton label="TECH" onClick={() => setInputText("X Y Z\n1 2 3")} />
+                            <PresetButton label="MATH" onClick={() => setInputText("∑ ∫ µ\nΩ ∆ π")} />
+                            <PresetButton label="ART" onClick={() => setInputText("✦ ✧\n★ ☆")} />
+                            <PresetButton label="CODE" onClick={() => setInputText("{ [ ( )\n< > ] }")} />
+                            <PresetButton label="RESET" onClick={() => onReset()} className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/30" />
+                        </div>
+                    </>
+                ) : (
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                        <PresetButton active={shapeMode === "circle"} label="● Circle" onClick={() => setShapeMode("circle")} />
+                        <PresetButton active={shapeMode === "spiral"} label="🌀 Spiral" onClick={() => setShapeMode("spiral")} />
+                        <PresetButton active={shapeMode === "heart"} label="♥ Heart" onClick={() => setShapeMode("heart")} />
+                        <PresetButton active={shapeMode === "star"} label="★ Star" onClick={() => setShapeMode("star")} />
+                    </div>
+                )}
             </div>
 
             <div className="h-px w-full bg-zinc-800 my-2"></div>
@@ -74,22 +104,28 @@ export function KineticParameterPanel(props: KineticParameterPanelProps) {
             {/* Visuals Sliders */}
             <div className="flex flex-col gap-6">
                 <SliderControl label="Particle Count" value={particleCount} min={500} max={10000} step={500} onChange={setParticleCount} />
-                <SliderControl label="Base Font Size" value={fontSize} min={80} max={400} step={10} onChange={setFontSize} />
+                {shapeMode === "text" && (
+                    <SliderControl label="Base Font Size" value={fontSize} min={80} max={400} step={10} onChange={setFontSize} />
+                )}
             </div>
 
         </div>
     );
 }
 
-function PresetButton({ label, onClick, className = "" }: { label: string, onClick: () => void, className?: string }) {
+function PresetButton({ label, onClick, active = false, className = "" }: { label: string, onClick: () => void, active?: boolean, className?: string }) {
     return (
         <button
             onClick={onClick}
-            className={`px-2 py-1.5 text-xs font-medium bg-zinc-800 rounded transition-colors text-zinc-300 hover:bg-zinc-700 border border-zinc-700 ${className}`}
+            className={`px-2 py-1.5 text-xs font-medium rounded transition-colors border
+               ${active
+                    ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border-zinc-700'} 
+               ${className}`}
         >
             {label}
         </button>
-    )
+    );
 }
 
 interface SliderControlProps {

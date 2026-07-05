@@ -12,6 +12,7 @@ interface SimulationCanvasProps {
     trailLength: number;
     glowIntensity: number;
     interactionMode: InteractionMode;
+    showVectorField: boolean;
     resetKey: number; // Incrementing this forces a camera reset
 }
 
@@ -23,6 +24,7 @@ export function SimulationCanvas({
     trailLength,
     glowIntensity,
     interactionMode,
+    showVectorField,
     resetKey,
 }: SimulationCanvasProps) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -51,8 +53,6 @@ export function SimulationCanvas({
         lastPanX: 0, // Keep track for drag deltas
         lastPanY: 0,
     });
-
-    // Removed getDynamicColor since it's now handled by buckets
 
     const handleResetCamera = useCallback(() => {
         physicsRefs.current.panX = 0;
@@ -119,8 +119,6 @@ export function SimulationCanvas({
                 lastFpsTime = now;
             }
 
-            // Important: The physics engine expects mouse coordinates in standard Screen space
-            // BUT we need to offset it by the Camera pan/zoom so that interactions match visual locations
             // Translate Screen Mouse -> World Mouse
             const worldMx = (refs.mx - (refs.width / 2) - refs.panX) / refs.scale + (refs.width / 2);
             const worldMy = (refs.my - (refs.height / 2) - refs.panY) / refs.scale + (refs.height / 2);
@@ -151,11 +149,68 @@ export function SimulationCanvas({
                 (refs.panY + (refs.height / 2) * (1 - refs.scale)) * refs.dpr
             );
 
+            // Draw faint flow/vector field overlay if toggled
+            if (showVectorField) {
+                const spacing = 45;
+                const cx = refs.width / 2;
+                const cy = refs.height / 2;
+
+                ctx.strokeStyle = "rgba(96, 165, 250, 0.12)"; // Faint blue vectors
+                ctx.lineWidth = 1;
+
+                for (let y = spacing / 2; y < refs.height; y += spacing) {
+                    for (let x = spacing / 2; x < refs.width; x += spacing) {
+                        const dx = x - cx;
+                        const dy = y - cy;
+                        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+                        const tx = -dy / dist;
+                        const ty = dx / dist;
+                        const ix = -dx / dist;
+                        const iy = -dy / dist;
+
+                        const nx = Math.sin(y * 0.005 + refs.time * 0.5) * turbulenceFactor;
+                        const ny = Math.cos(x * 0.005 + refs.time * 0.5) * turbulenceFactor;
+
+                        const vx = tx * rotationSpeed * 0.5 + ix * (gravityConstant * 0.2) + nx;
+                        const vy = ty * rotationSpeed * 0.5 + iy * (gravityConstant * 0.2) + ny;
+
+                        const vMag = Math.sqrt(vx * vx + vy * vy) || 1;
+                        const length = Math.min(15, vMag * 4.5);
+
+                        const ax = (vx / vMag) * length;
+                        const ay = (vy / vMag) * length;
+
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + ax, y + ay);
+                        ctx.stroke();
+
+                        // Tiny arrow head
+                        if (length > 4) {
+                            const angle = Math.atan2(ay, ax);
+                            ctx.fillStyle = "rgba(96, 165, 250, 0.08)";
+                            ctx.beginPath();
+                            ctx.moveTo(x + ax, y + ay);
+                            ctx.lineTo(
+                                x + ax - 4 * Math.cos(angle - Math.PI / 6),
+                                y + ay - 4 * Math.sin(angle - Math.PI / 6)
+                            );
+                            ctx.lineTo(
+                                x + ax - 4 * Math.cos(angle + Math.PI / 6),
+                                y + ay - 4 * Math.sin(angle + Math.PI / 6)
+                            );
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+
             // Setup global Glow effect
             if (glowIntensity > 0) {
                 ctx.globalCompositeOperation = "lighter";
                 ctx.shadowBlur = glowIntensity;
-                ctx.shadowColor = "#60a5fa"; // blue-400 equivalent for generic glow
+                ctx.shadowColor = "#60a5fa"; // blue-400
             } else {
                 ctx.globalCompositeOperation = "source-over";
                 ctx.shadowBlur = 0;
@@ -171,7 +226,6 @@ export function SimulationCanvas({
             for (let i = 0; i < 20; i++) {
                 if (colorBuckets[i].length === 0) continue;
 
-                // Calculate hue once per bucket
                 const hue = Math.max(180, 260 - (i * 4));
                 const lightness = Math.min(80, 40 + i * 2);
                 ctx.fillStyle = `hsl(${hue}, 100%, ${lightness}%)`;
@@ -196,7 +250,7 @@ export function SimulationCanvas({
             resizeObserver.disconnect();
             cancelAnimationFrame(animationFrameId);
         };
-    }, [rotationSpeed, particleCount, turbulenceFactor, gravityConstant, trailLength, glowIntensity, interactionMode, resetKey]);
+    }, [rotationSpeed, particleCount, turbulenceFactor, gravityConstant, trailLength, glowIntensity, interactionMode, showVectorField, resetKey]);
 
     // 3. Re-init Particles if count changes significantly
     useEffect(() => {
@@ -263,7 +317,6 @@ export function SimulationCanvas({
         document.addEventListener('fullscreenchange', onFullscreenChange);
         return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
     }, []);
-
 
     return (
         <div

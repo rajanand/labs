@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { stepPhysics, initDoublePendulums } from "@/lib/physics/double-pendulum";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { stepPhysics, initDoublePendulums, PendulumEntity } from "@/lib/physics/double-pendulum";
 
 interface PendulumCanvasProps {
     mass1: number;
@@ -13,12 +13,22 @@ interface PendulumCanvasProps {
     showMultiple: boolean;
     resetKey: number;
     resetVariant: "top" | "horizontal";
+    isAudioEnabled: boolean;
+}
+
+interface SoundingPendulum extends PendulumEntity {
+    prevTheta1?: number;
+    prevTheta2?: number;
 }
 
 export function PendulumCanvas(props: PendulumCanvasProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Audio context ref and rate limiting refs
+    const audioCtxRef = useRef<AudioContext | null>(null);
+    const lastPlayedRef = useRef<number[]>([]);
 
     // We keep the actual simulation data inside a ref to avoid React overhead during the 60FPS loop
     const simulationRef = useRef({
@@ -32,6 +42,60 @@ export function PendulumCanvas(props: PendulumCanvasProps) {
     useEffect(() => {
         simulationRef.current.pendulums = initDoublePendulums(props.showMultiple ? 5 : 1, props.resetVariant);
     }, [props.showMultiple, props.resetKey, props.resetVariant]);
+
+    // Cleanup audio context on unmount
+    useEffect(() => {
+        return () => {
+            if (audioCtxRef.current) {
+                audioCtxRef.current.close().catch(console.error);
+            }
+        };
+    }, []);
+
+    // Procedural Synth Tone generator (wrapped in useCallback to prevent hook dependency warnings)
+    const triggerPendulumSound = useCallback((index: number, armIndex: number, p1: number, p2: number) => {
+        try {
+            if (!audioCtxRef.current) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+                audioCtxRef.current = new AudioContextClass();
+            }
+            const ctx = audioCtxRef.current;
+            if (ctx.state === "suspended") {
+                ctx.resume();
+            }
+
+            const osc = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            // A clean harmonic pentatonic scale: C4, D4, E4, G4, A4, C5, D5, E5, G5, A5
+            const pentatonic = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00];
+            const baseFreq = pentatonic[(index * 2 + (armIndex - 1)) % pentatonic.length];
+
+            // Modulate pitch slightly based on pendulum momentum
+            const velocity = Math.abs(armIndex === 1 ? p1 : p2);
+            const freq = baseFreq + Math.min(60, velocity * 1.5);
+
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            osc.type = index % 2 === 0 ? "sine" : "triangle"; // Smooth ambient tones
+
+            // Attack-decay envelope
+            gainNode.gain.setValueAtTime(0, ctx.currentTime);
+            
+            // Adjust volume based on whether multiple arms are active (to prevent clipping)
+            const maxVolume = props.showMultiple ? 0.03 : 0.12;
+            
+            gainNode.gain.linearRampToValueAtTime(maxVolume, ctx.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
+
+            osc.start();
+            osc.stop(ctx.currentTime + 0.45);
+        } catch (e) {
+            console.error("Audio synthesis failed:", e);
+        }
+    }, [props.showMultiple]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -100,7 +164,26 @@ export function PendulumCanvas(props: PendulumCanvasProps) {
             ctx.fill();
 
             for (let i = 0; i < sim.pendulums.length; i++) {
-                const p = sim.pendulums[i];
+                const p = sim.pendulums[i] as SoundingPendulum;
+
+                // Track crossings for audio triggering
+                const prevT1 = p.prevTheta1 !== undefined ? p.prevTheta1 : p.theta1;
+                const prevT2 = p.prevTheta2 !== undefined ? p.prevTheta2 : p.theta2;
+
+                const crossed1 = Math.sign(Math.sin(prevT1)) !== Math.sign(Math.sin(p.theta1)) && prevT1 !== p.theta1;
+                const crossed2 = Math.sign(Math.sin(prevT2)) !== Math.sign(Math.sin(p.theta2)) && prevT2 !== p.theta2;
+
+                if (props.isAudioEnabled && (crossed1 || crossed2)) {
+                    const now = performance.now();
+                    const lastPlayed = lastPlayedRef.current[i] || 0;
+                    if (now - lastPlayed > 150) { // Cooldown of 150ms per pendulum
+                        lastPlayedRef.current[i] = now;
+                        triggerPendulumSound(i, crossed1 ? 1 : 2, p.p1, p.p2);
+                    }
+                }
+
+                p.prevTheta1 = p.theta1;
+                p.prevTheta2 = p.theta2;
 
                 // Draw Trail first (so arms draw on top)
                 if (p.path.length > 2) {
@@ -165,7 +248,7 @@ export function PendulumCanvas(props: PendulumCanvasProps) {
             resizeObserver.disconnect();
             cancelAnimationFrame(animationFrameId);
         };
-    }, [props.mass1, props.mass2, props.length1, props.length2, props.gravity, props.trailLength]);
+    }, [props.mass1, props.mass2, props.length1, props.length2, props.gravity, props.trailLength, props.isAudioEnabled, props.showMultiple, triggerPendulumSound]);
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
@@ -200,7 +283,7 @@ export function PendulumCanvas(props: PendulumCanvasProps) {
                 >
                     {isFullscreen ? (
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20V14H3m12 6v-6h6m-12-6v-6H3m12 0v6h6" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20V14H3m12 6v-6h6m-12-6v-6h6m-12-6v-6H3m12 0v6h6" />
                         </svg>
                     ) : (
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

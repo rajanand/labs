@@ -15,6 +15,8 @@ interface PendulumParameterPanelProps {
     setTrailLength: (value: number) => void;
     showMultiple: boolean;
     setShowMultiple: (value: boolean) => void;
+    isAudioEnabled: boolean;
+    setIsAudioEnabled: (value: boolean) => void;
     onReset: (variant: "top" | "horizontal") => void;
 }
 
@@ -27,6 +29,7 @@ export function PendulumParameterPanel(props: PendulumParameterPanelProps) {
         gravity, setGravity,
         trailLength, setTrailLength,
         showMultiple, setShowMultiple,
+        isAudioEnabled, setIsAudioEnabled,
         onReset,
     } = props;
 
@@ -52,7 +55,33 @@ export function PendulumParameterPanel(props: PendulumParameterPanelProps) {
                 </div>
             </div>
 
-            <div className="flex flex-col gap-2 mt-2">
+            {/* Audio Synthesis Toggle */}
+            <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-zinc-300">Sound Synthesis</label>
+                <button
+                    onClick={() => setIsAudioEnabled(!isAudioEnabled)}
+                    className={`w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors border flex items-center justify-center gap-2
+            ${isAudioEnabled ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' : 'bg-transparent text-zinc-400 border-zinc-700 hover:bg-zinc-800'}`}
+                >
+                    {isAudioEnabled ? (
+                        <>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                            </svg>
+                            Chimes Synthesizer Active
+                        </>
+                    ) : (
+                        <>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                            </svg>
+                            Mute Chimes
+                        </>
+                    )}
+                </button>
+            </div>
+
+            <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-zinc-300">Chaos Demonstration</label>
                 <button
                     onClick={() => { setShowMultiple(!showMultiple); onReset("horizontal"); }}

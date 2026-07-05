@@ -29,7 +29,6 @@ export function AIGridCanvas(props: AIGridCanvasProps) {
     useEffect(() => {
         const sim = simulationRef.current;
         if (sim.width > 0 && sim.height > 0) {
-            // padding = 10% of smallest dimension
             const padding = Math.min(sim.width, sim.height) * 0.1;
             sim.mesh = createGridMesh(props.resolution, props.resolution, padding, sim.width, sim.height);
         }
@@ -92,50 +91,118 @@ export function AIGridCanvas(props: AIGridCanvasProps) {
             const cols = sim.mesh[0].length;
             const nodeSize = props.nodeSize;
 
-            // Draw Connecting Lines
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+            // Two-pass connection line rendering for optimal speed and visual aesthetics
+            // Pass A: Draw quiet connections in a single, fast batch stroke
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
             ctx.lineWidth = 1;
             ctx.beginPath();
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const node = sim.mesh[r][c];
+                    const distNode = node.disturbance || 0;
 
                     // Line to right neighbor
-                    if (c < cols - 1) {
+                    if (c < cols - 1 && node.rightConnected) {
                         const right = sim.mesh[r][c + 1];
-                        ctx.moveTo(node.x, node.y);
-                        ctx.lineTo(right.x, right.y);
+                        const distAvg = (distNode + (right.disturbance || 0)) / 2;
+                        if (distAvg <= 0.05) {
+                            ctx.moveTo(node.x, node.y);
+                            ctx.lineTo(right.x, right.y);
+                        }
                     }
 
                     // Line to bottom neighbor
-                    if (r < rows - 1) {
+                    if (r < rows - 1 && node.bottomConnected) {
                         const bottom = sim.mesh[r + 1][c];
-                        ctx.moveTo(node.x, node.y);
-                        ctx.lineTo(bottom.x, bottom.y);
+                        const distAvg = (distNode + (bottom.disturbance || 0)) / 2;
+                        if (distAvg <= 0.05) {
+                            ctx.moveTo(node.x, node.y);
+                            ctx.lineTo(bottom.x, bottom.y);
+                        }
                     }
                 }
             }
             ctx.stroke();
 
-            // Draw Nodes (only if node size > 0)
+            // Pass B: Draw active connections (glowing color ripple wave) individually
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const node = sim.mesh[r][c];
+                    const distNode = node.disturbance || 0;
+
+                    // Line to right neighbor
+                    if (c < cols - 1 && node.rightConnected) {
+                        const right = sim.mesh[r][c + 1];
+                        const distAvg = (distNode + (right.disturbance || 0)) / 2;
+                        if (distAvg > 0.05) {
+                            ctx.beginPath();
+                            ctx.moveTo(node.x, node.y);
+                            ctx.lineTo(right.x, right.y);
+                            
+                            const hue = 200 + distAvg * 110; // Shift from cyan to purple/pink
+                            const alpha = 0.15 + distAvg * 0.75;
+                            ctx.strokeStyle = `hsla(${hue}, 95%, 60%, ${alpha})`;
+                            ctx.lineWidth = 1 + distAvg * 2.5;
+                            ctx.stroke();
+                        }
+                    }
+
+                    // Line to bottom neighbor
+                    if (r < rows - 1 && node.bottomConnected) {
+                        const bottom = sim.mesh[r + 1][c];
+                        const distAvg = (distNode + (bottom.disturbance || 0)) / 2;
+                        if (distAvg > 0.05) {
+                            ctx.beginPath();
+                            ctx.moveTo(node.x, node.y);
+                            ctx.lineTo(bottom.x, bottom.y);
+                            
+                            const hue = 200 + distAvg * 110;
+                            const alpha = 0.15 + distAvg * 0.75;
+                            ctx.strokeStyle = `hsla(${hue}, 95%, 60%, ${alpha})`;
+                            ctx.lineWidth = 1 + distAvg * 2.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            // Draw Nodes
             if (nodeSize > 0) {
-                ctx.fillStyle = "rgba(161, 161, 170, 0.8)"; // zinc-400
+                // Pass 1: Quiet nodes
+                ctx.fillStyle = "rgba(161, 161, 170, 0.4)"; // zinc-400 translucent
                 ctx.beginPath();
                 for (let r = 0; r < rows; r++) {
                     for (let c = 0; c < cols; c++) {
                         const node = sim.mesh[r][c];
-                        // For performance, use rects or path moves. rects are generally faster than arcs.
-                        // Since these are very small (1-2px) rects look fine and render faster.
-                        if (nodeSize < 3) {
-                            ctx.rect(node.x - nodeSize / 2, node.y - nodeSize / 2, nodeSize, nodeSize);
-                        } else {
-                            ctx.moveTo(node.x, node.y);
-                            ctx.arc(node.x, node.y, nodeSize, 0, Math.PI * 2);
+                        const dist = node.disturbance || 0;
+                        if (dist <= 0.05) {
+                            if (nodeSize < 3) {
+                                ctx.rect(node.x - nodeSize / 2, node.y - nodeSize / 2, nodeSize, nodeSize);
+                            } else {
+                                ctx.moveTo(node.x, node.y);
+                                ctx.arc(node.x, node.y, nodeSize, 0, Math.PI * 2);
+                            }
                         }
                     }
                 }
                 ctx.fill();
+
+                // Pass 2: Active nodes (glowing ripple points)
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const node = sim.mesh[r][c];
+                        const dist = node.disturbance || 0;
+                        if (dist > 0.05) {
+                            ctx.beginPath();
+                            const hue = 200 + dist * 110;
+                            ctx.fillStyle = `hsla(${hue}, 95%, 60%, 0.95)`;
+                            const pulseSize = nodeSize + dist * 3;
+                            ctx.arc(node.x, node.y, pulseSize, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
             }
 
             animationFrameId = requestAnimationFrame(render);

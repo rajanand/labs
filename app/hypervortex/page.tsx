@@ -15,6 +15,7 @@ export default function HyperVortexPage() {
     const [trailLength, setTrailLength] = useState(0.2); // 0.01 is long, 1 is instantaneous
     const [glowIntensity, setGlowIntensity] = useState(5);
     const [interactionMode, setInteractionMode] = useState<InteractionMode>("attract");
+    const [showVectorField, setShowVectorField] = useState(false);
 
     // To coordinate camera resets between panel and canvas
     const [resetKey, setResetKey] = useState(0);
@@ -55,6 +56,8 @@ export default function HyperVortexPage() {
                         setGlowIntensity={setGlowIntensity}
                         interactionMode={interactionMode}
                         setInteractionMode={setInteractionMode}
+                        showVectorField={showVectorField}
+                        setShowVectorField={setShowVectorField}
                         onResetCamera={handleResetCamera}
                     />
                 </div>
@@ -68,6 +71,7 @@ export default function HyperVortexPage() {
                         trailLength={trailLength}
                         glowIntensity={glowIntensity}
                         interactionMode={interactionMode}
+                        showVectorField={showVectorField}
                         resetKey={resetKey}
                     />
                 </div>

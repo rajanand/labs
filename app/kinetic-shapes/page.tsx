@@ -13,6 +13,7 @@ export default function KineticShapesPage() {
     const [repulsionRadius, setRepulsionRadius] = useState(100);
     const [repulsionStrength, setRepulsionStrength] = useState(20);
     const [fontSize, setFontSize] = useState(180);
+    const [shapeMode, setShapeMode] = useState<"text" | "circle" | "spiral" | "heart" | "star">("text");
 
     // Trigger physics resets (forces particles to scatter instantly instead of morphing)
     const [resetKey, setResetKey] = useState(0);
@@ -47,6 +48,7 @@ export default function KineticShapesPage() {
                         repulsionRadius={repulsionRadius} setRepulsionRadius={setRepulsionRadius}
                         repulsionStrength={repulsionStrength} setRepulsionStrength={setRepulsionStrength}
                         fontSize={fontSize} setFontSize={setFontSize}
+                        shapeMode={shapeMode} setShapeMode={setShapeMode}
                         onReset={handleReset}
                     />
                 </div>
@@ -61,6 +63,7 @@ export default function KineticShapesPage() {
                         repulsionStrength={repulsionStrength}
                         fontSize={fontSize}
                         resetKey={resetKey}
+                        shapeMode={shapeMode}
                     />
                 </div>
             </div>
