@@ -17,6 +17,8 @@ interface SandParameterPanelProps {
     setMaterial: (value: number) => void;
     isPlaying: boolean;
     setIsPlaying: (value: boolean) => void;
+    speed: number;
+    setSpeed: (value: number) => void;
     onClear: () => void;
 }
 
@@ -25,6 +27,7 @@ export function SandParameterPanel(props: SandParameterPanelProps) {
         brushSize, setBrushSize,
         material, setMaterial,
         isPlaying, setIsPlaying,
+        speed, setSpeed,
         onClear,
     } = props;
 
@@ -133,9 +136,10 @@ export function SandParameterPanel(props: SandParameterPanelProps) {
 
             <div className="h-px w-full bg-zinc-800 my-2"></div>
 
-            {/* Brush Sliders */}
+            {/* Brush & Speed Sliders */}
             <div className="flex flex-col gap-6">
                 <SliderControl label="Brush Size" value={brushSize} min={1} max={30} step={1} onChange={setBrushSize} />
+                <SliderControl label="Simulation Speed" value={speed} min={1} max={4} step={1} suffix="x" onChange={setSpeed} />
             </div>
 
         </div>
@@ -147,7 +151,7 @@ function MaterialButton({ active, onClick, label, desc, colorClass }: { active: 
         <button
             onClick={onClick}
             className={`flex items-center gap-4 text-left p-3 rounded-lg border transition-all
-               ${active ? 'bg-zinc-800 border-zinc-600 ring-1 ring-zinc-500' : 'bg-zinc-950 border-zinc-800 hover:bg-zinc-900'}
+               ${active ? 'bg-zinc-800 border-zinc-600 ring-1 ring-zinc-500' : 'bg-zinc-950 border-zinc-800 hover:bg-zinc-900 text-zinc-400'}
             `}
         >
             <div className={`w-8 h-8 rounded-full shadow-inner flex-shrink-0 ${colorClass}`}></div>
@@ -165,16 +169,17 @@ interface SliderControlProps {
     min: number;
     max: number;
     step: number;
+    suffix?: string;
     onChange: (val: number) => void;
 }
 
-function SliderControl({ label, value, min, max, step, onChange }: SliderControlProps) {
+function SliderControl({ label, value, min, max, step, suffix = "", onChange }: SliderControlProps) {
     return (
         <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
                 <label className="text-sm font-medium text-zinc-300">{label}</label>
                 <span className="text-xs font-mono text-blue-400 bg-blue-400/10 px-2 py-1 rounded-md">
-                    {value}
+                    {value}{suffix}
                 </span>
             </div>
             <input

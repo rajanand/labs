@@ -7,9 +7,10 @@ import { SandCanvas } from "@/components/SandCanvas";
 
 export default function FallingSandPage() {
     const [brushSize, setBrushSize] = useState(5);
-    // Materials: 0=Empty, 1=Sand, 2=Water, 3=Wall
+    // Materials: 0=Empty, 1=Sand, 2=Water, 3=Wall, 4=Wood, 5=Acid, 6=Fire, 7=Lava
     const [material, setMaterial] = useState<number>(1);
     const [isPlaying, setIsPlaying] = useState(true);
+    const [speed, setSpeed] = useState(2); // Defaults to 2x speed for smoother flow dynamics
 
     // Trigger physics resets
     const [resetKey, setResetKey] = useState(0);
@@ -40,6 +41,7 @@ export default function FallingSandPage() {
                         brushSize={brushSize} setBrushSize={setBrushSize}
                         material={material} setMaterial={setMaterial}
                         isPlaying={isPlaying} setIsPlaying={setIsPlaying}
+                        speed={speed} setSpeed={setSpeed}
                         onClear={handleClear}
                     />
                 </div>
@@ -50,6 +52,7 @@ export default function FallingSandPage() {
                         material={material}
                         isPlaying={isPlaying}
                         resetKey={resetKey}
+                        speed={speed}
                     />
                 </div>
             </div>
