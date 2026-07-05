@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 
 interface DropdownProps {
     value: number | string;
-    onChange: (value: any) => void;
+    onChange: (value: number | string) => void;
     options: { label: string; value: number | string }[];
 }
 
