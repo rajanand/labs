@@ -1,6 +1,6 @@
 import React from "react";
 import { GlobalSettings, physicsPresets } from "@/lib/physics/ai-simulator-presets";
-
+import { Dropdown } from "./Dropdown";
 interface PhysicsParameterPanelProps {
     globalSettings: GlobalSettings;
     setGlobalSettings: React.Dispatch<React.SetStateAction<GlobalSettings>>;
@@ -93,15 +93,14 @@ export function PhysicsParameterPanel(props: PhysicsParameterPanelProps) {
             {/* Preset Selector */}
             <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-zinc-300">Physics Preset</label>
-                <select
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                <Dropdown 
                     value={selectedConfigId}
-                    onChange={(e) => setSelectedConfigId(Number(e.target.value))}
-                >
-                    {physicsPresets.map(preset => (
-                        <option key={preset.id} value={preset.id}>{preset.name}</option>
-                    ))}
-                </select>
+                    onChange={(val) => setSelectedConfigId(val as number)}
+                    options={physicsPresets.map(preset => ({
+                        label: preset.name,
+                        value: preset.id
+                    }))}
+                />
                 <p className="text-xs text-blue-400/80 mt-1 italic leading-relaxed">{currentConfig.nuanceDescription}</p>
             </div>
 

@@ -1,86 +1,73 @@
 import Link from "next/link";
+import { experiments } from "@/lib/constants";
 
 export default function Home() {
-  const experiments = [
-    {
-      id: "hypervortex",
-      name: "HyperVortex",
-      description: "Interactive particle simulation with tunable physics parameters.",
-      href: "/hypervortex",
-    },
-    {
-      id: "double-pendulum",
-      name: "Double Pendulum",
-      description: "Demonstration of pure Chaos Theory using Lagrangian Mechanics.",
-      href: "/double-pendulum",
-    },
-    {
-      id: "falling-sand",
-      name: "Falling Sand",
-      description: "Interactive cellular automata simulator mimicking physics of sand and water.",
-      href: "/falling-sand",
-    },
-    {
-      id: "kinetic-shapes",
-      name: "Kinetic Shapes",
-      description: "Spring physics particles that morph into text and geometric shapes.",
-      href: "/kinetic-shapes",
-    },
-    {
-      id: "audio-visualizer",
-      name: "Audio Visualizer",
-      description: "Real-time microphone frequency and waveform visualizer.",
-      href: "/audio-visualizer",
-    },
-    {
-      id: "ai-kinetic-shapes",
-      name: "AI Studio Kinetic Fabric",
-      description: "Interconnected spring-node topology mimicking a physical fabric mesh.",
-      href: "/ai-kinetic-shapes",
-    },
-    {
-      id: "physics-simulator",
-      name: "Physics Simulator",
-      description: "Bouncing ball constraints in rotating geometric polygons.",
-      href: "/physics-simulator",
-    },
-  ];
-
   return (
-    <main className="min-h-screen p-8 md:p-24 max-w-5xl mx-auto">
-      <header className="mb-16">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">
-          Labs
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-[18px] font-bold tracking-tight text-zinc-50">
+          Platform Overview
         </h1>
-        <p className="text-zinc-400 text-lg">
-          Personal experimentation platform.
+        <p className="text-xs text-zinc-400 mt-1">
+          Active interactive physics and mathematics experiments.
         </p>
-      </header>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {experiments.map((exp) => (
-          <Link
-            key={exp.id}
-            href={exp.href}
-            className="group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-zinc-900 border border-zinc-800 p-6 transition-all hover:bg-zinc-800/80 hover:border-zinc-700 hover:-translate-y-1"
-          >
-            <div>
-              <h2 className="text-xl font-semibold mb-2 text-zinc-100 group-hover:text-blue-400 transition-colors">
-                {exp.name}
-              </h2>
-              <p className="text-zinc-400 text-sm leading-relaxed">
-                {exp.description}
-              </p>
-            </div>
-            <div className="mt-8 flex items-center text-sm font-medium text-blue-500 opacity-0 transform translate-y-2 transition-all group-hover:opacity-100 group-hover:translate-y-0">
-              Launch Experiment
-              <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </div>
-          </Link>
-        ))}
       </div>
-    </main>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-[#161b2e] border border-white/5 rounded-lg p-5">
+          <div className="text-[11px] font-medium uppercase tracking-widest text-zinc-400 mb-2">Total Labs</div>
+          <div className="text-[22px] font-bold tracking-tight text-zinc-50">{experiments.length}</div>
+          <div className="text-[11px] text-zinc-400 mt-1">Active Modules</div>
+        </div>
+        <div className="bg-[#161b2e] border border-white/5 rounded-lg p-5">
+          <div className="text-[11px] font-medium uppercase tracking-widest text-zinc-400 mb-2">Engine</div>
+          <div className="text-[22px] font-bold tracking-tight text-zinc-50">Next.js 14</div>
+          <div className="text-[11px] text-zinc-400 mt-1">React + Tailwind</div>
+        </div>
+        <div className="bg-[#161b2e] border border-white/5 rounded-lg p-5">
+          <div className="text-[11px] font-medium uppercase tracking-widest text-zinc-400 mb-2">Performance</div>
+          <div className="text-[22px] font-bold tracking-tight text-zinc-50">60 FPS</div>
+          <div className="text-[11px] text-zinc-400 mt-1">Target render rate</div>
+        </div>
+        <div className="bg-[#161b2e] border border-white/5 rounded-lg p-5">
+          <div className="text-[11px] font-medium uppercase tracking-widest text-zinc-400 mb-2">Physics Mode</div>
+          <div className="text-[22px] font-bold tracking-tight text-zinc-50">Enabled</div>
+          <div className="text-[11px] text-zinc-400 mt-1">Real-time simulation</div>
+        </div>
+      </div>
+
+      <div className="bg-[#161b2e] border border-white/5 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr>
+                <th className="sticky top-0 bg-[#1c2237] p-3 text-zinc-400 font-semibold uppercase tracking-widest border-b border-white/5">Experiment</th>
+                <th className="sticky top-0 bg-[#1c2237] p-3 text-zinc-400 font-semibold uppercase tracking-widest border-b border-white/5">Description</th>
+                <th className="sticky top-0 bg-[#1c2237] p-3 text-zinc-400 font-semibold uppercase tracking-widest border-b border-white/5">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {experiments.map((exp) => (
+                <tr key={exp.id} className="border-b border-white-[0.04] transition-colors hover:bg-zinc-800/50 last:border-0 group">
+                  <td className="p-3">
+                    <Link href={exp.href} className="font-semibold text-blue-400 hover:underline">
+                      {exp.name}
+                    </Link>
+                  </td>
+                  <td className="p-3 text-zinc-50">
+                    {exp.description}
+                  </td>
+                  <td className="p-3">
+                    <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-blue-400/15 text-blue-400">
+                      Active
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   );
 }
