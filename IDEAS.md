@@ -4,6 +4,22 @@ This document contains ideas for future interactive experiments and simulations 
 
 ---
 
+## 9. Kinetic Shapes & Typography (Based on Reference)
+*   **What it is:** A visual experiment where particles (or distinct shapes like dots, squares, and crosshairs) are drawn to specific coordinate targets to form text or larger geometric shapes. The shapes react to physics (like mouse repulsion) but always try to return to their "home" configuration.
+*   **Why it's cool:** It bridges the gap between text formatting and fluid dynamics. By giving each particle a "spring-like" attraction to a target coordinate, it feels like the letter or shape is made of millions of responsive magnets.
+*   **Key Features Based on Reference:**
+    *   **Shape Morphing:** Particles transition smoothly from forming one shape (e.g., a circle) into forming text (e.g., "HELLO").
+    *   **Mouse Interaction:** As the mouse moves through the field, it repels the particles, distorting the shape, which then snaps back elastically.
+    *   **Particle Types:** Instead of just drawing dots, particles can be various characters or SVG shapes (like `+`, `•`, `-`) which creates a sophisticated tech aesthetic.
+*   **Parameters to add:** 
+    *   Text input field (to dynamically change what word the particles form).
+    *   Spring stiffness (how fast they snap back).
+    *   Mouse repulsion radius.
+    *   Particle density/count.
+*   **Difficulty:** Medium. Requires reading Pixel data from an off-screen Canvas to determine text target coordinates, and then applying classic spring-physics to the particles.
+
+---
+
 ## 1. Boids (Flocking Simulation)
 *   **What it is:** A simulation of how birds flock or fish school. Each "boid" follows three simple rules: Separation (don't crowd neighbors), Alignment (steer towards the average heading of neighbors), and Cohesion (steer towards the average position of neighbors).
 *   **Why it's cool:** It emerges complex, life-like behavior from very simple mathematics.
@@ -41,3 +57,27 @@ This document contains ideas for future interactive experiments and simulations 
 *   **Why it's cool:** This algorithm generates patterns that look exactly like the spots on a leopard, the stripes on a zebra, or the ridges of brain coral. It's a fantastic example of mathematics modeling biology.
 *   **Parameters to add:** Feed rate, Kill rate, Diffusion rates for both chemicals. (Changing feed/kill rates slightly completely changes the generated patterns).
 *   **Difficulty:** Medium. It involves running a blur pass and a mathematical formula over every pixel on the canvas repeatedly.
+
+---
+
+## 6. Falling Sand (Cellular Automata Simulator)
+*   **What it is:** A grid-based physics toy. Users can paint different "materials" (Sand, Water, Stone) onto a canvas, and the materials interact based on simple rules.
+*   **Why it's cool:** Very easy to understand intuitively. Sand falls straight down, or down-diagonally if blocked. Water falls down, or spreads infinitely horizontally if blocked. Solid stone doesn't move.
+*   **Parameters to add:** Brush size selector, Material selector (Sand, Water, Wall, Eraser).
+*   **Difficulty:** Easy. Focuses heavily on 2D array manipulation and standard Javascript loops.
+
+---
+
+## 7. Sorting Algorithm Visualizer
+*   **What it is:** Generates an array of random numbers and draws them as vertical bars. Animates standard sorting algorithms (Bubble, Merge, Insertion) swapping the bars.
+*   **Why it's cool:** Amazing visual way to understand how standard Data Structures & Algorithms actually work under the hood. 
+*   **Parameters to add:** Speed slider, Array Size slider, Algorithm dropdown selector.
+*   **Difficulty:** Easy. Focuses purely on logic and state management without complex math.
+
+---
+
+## 8. Spirograph / Harmonograph
+*   **What it is:** Traces geometric patterns using a virtual pen attached to spinning, overlapping circles.
+*   **Why it's cool:** Generates incredibly complex, beautiful mandala art using nothing but simple high school trigonometry (Sine and Cosine).
+*   **Parameters to add:** Rotational speed and radius for 2 to 4 different intersecting circles, Color selector.
+*   **Difficulty:** Easy. Focuses purely on drawing simple math formulas over time.
